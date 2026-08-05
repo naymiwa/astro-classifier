@@ -118,7 +118,8 @@ wandb/
 mlruns/
 mlartifacts/
 
-# ===== Misc =====
+# ===== Old git repo backup (windows) =====
+.git.backup/
 *.png
 *.jpg
 *.jpeg
