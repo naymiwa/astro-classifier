@@ -1,0 +1,6 @@
+constellation
+cosmos_space
+galaxies
+nebula
+planets
+stars

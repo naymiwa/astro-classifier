@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Astro Classifier</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0d1a;
+    --panel: #12162a;
+    --line: #262c48;
+    --text: #f2f0ea;
+    --muted: #8b90ab;
+    --accent: #7c83fd;
+    --gold: #ffb86b;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 32px 16px;
+    position: relative;
+    overflow-x: hidden;
+  }
+
+  #stars {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+  }
+
+  .wrap {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 560px;
+  }
+
+  h1 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+    font-size: 2rem;
+    letter-spacing: -0.01em;
+    margin: 0 0 4px;
+  }
+
+  .eyebrow {
+    font-family: 'Space Grotesk', sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    font-size: 0.7rem;
+    color: var(--accent);
+    margin: 0 0 8px;
+  }
+
+  .sub {
+    color: var(--muted);
+    font-size: 0.95rem;
+    margin: 0 0 28px;
+  }
+
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 24px;
+  }
+
+  .mode-toggle {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    background: rgba(255,255,255,0.04);
+    border-radius: 10px;
+    padding: 4px;
+    margin-bottom: 18px;
+  }
+
+  .mode-btn {
+    border: none;
+    border-radius: 8px;
+    padding: 9px;
+    background: transparent;
+    color: var(--muted);
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 600;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+
+  .mode-btn.active {
+    background: var(--accent);
+    color: #0a0d1a;
+  }
+
+  #file-name {
+    margin: 12px 0 0;
+    color: var(--muted);
+    font-size: 0.8rem;
+    text-align: center;
+    word-break: break-all;
+    display: none;
+  }
+
+  .badge {
+    display: inline-block;
+    margin-left: 8px;
+    padding: 2px 8px;
+    border-radius: 99px;
+    font-size: 0.7rem;
+    vertical-align: middle;
+    color: var(--gold);
+    background: rgba(255, 184, 107, 0.12);
+  }
+
+  #dropzone {
+    border: 1.5px dashed var(--line);
+    border-radius: 12px;
+    padding: 36px 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.15s ease, background 0.15s ease;
+  }
+
+  #dropzone:hover, #dropzone.drag {
+    border-color: var(--accent);
+    background: rgba(124, 131, 253, 0.06);
+  }
+
+  #dropzone p {
+    margin: 0;
+    color: var(--muted);
+    font-size: 0.9rem;
+  }
+
+  #dropzone strong { color: var(--text); }
+
+  #file-input { display: none; }
+
+  #preview-wrap { display: none; margin-top: 20px; }
+
+  #preview {
+    width: 100%;
+    max-height: 260px;
+    object-fit: cover;
+    border-radius: 10px;
+    display: block;
+  }
+
+  #analyze-btn {
+    width: 100%;
+    margin-top: 16px;
+    padding: 13px;
+    border: none;
+    border-radius: 10px;
+    background: var(--accent);
+    color: #0a0d1a;
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 600;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: opacity 0.15s ease, transform 0.1s ease;
+  }
+
+  #analyze-btn:hover { opacity: 0.9; }
+  #analyze-btn:active { transform: scale(0.99); }
+  #analyze-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  #results { margin-top: 24px; display: none; }
+
+  .result-row {
+    margin-bottom: 14px;
+  }
+
+  .result-label {
+    display: flex;
+    justify-content: space-between;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 0.85rem;
+    margin-bottom: 6px;
+  }
+
+  .result-label .name { text-transform: capitalize; }
+  .result-label .pct { color: var(--muted); }
+
+  .bar-track {
+    height: 8px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 99px;
+    overflow: hidden;
+  }
+
+  .bar-fill {
+    height: 100%;
+    border-radius: 99px;
+    background: linear-gradient(90deg, var(--accent), var(--gold));
+    width: 0%;
+    transition: width 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .result-row:first-child .result-label .name { color: var(--gold); }
+
+  #status {
+    margin-top: 14px;
+    font-size: 0.85rem;
+    color: var(--muted);
+    min-height: 1.2em;
+  }
+
+  #status.error { color: #ff8080; }
+</style>
+</head>
+<body>
+
+<canvas id="stars"></canvas>
+
+<div class="wrap">
+  <p class="eyebrow">Deep Space Classifier</p>
+  <h1>Apa objek langit ini?</h1>
+  <p class="sub">Upload gambar atau file FITS hasil observasi teleskop — model bakal nebak kategorinya.</p>
+
+  <div class="panel">
+    <div class="mode-toggle">
+      <button type="button" class="mode-btn active" data-mode="image">Gambar</button>
+      <button type="button" class="mode-btn" data-mode="fits">FITS</button>
+    </div>
+
+    <div id="dropzone">
+      <p id="dropzone-text"><strong>Klik untuk pilih gambar</strong><br>atau drag & drop di sini (JPG / PNG / WEBP)</p>
+      <input type="file" id="file-input" accept="image/jpeg,image/png,image/webp">
+    </div>
+
+    <p id="file-name"></p>
+
+    <div id="preview-wrap">
+      <img id="preview" alt="Preview">
+    </div>
+
+    <button id="analyze-btn" disabled>Analisis</button>
+
+    <div id="status"></div>
+
+    <div id="results"></div>
+  </div>
+</div>
+
+<script>
+  const IMAGE_API_URL = "/predict";
+  const FITS_API_URL = "/predict_fits";
+  const FITS_PREVIEW_URL = "/fits_preview";
+
+  const dropzone = document.getElementById("dropzone");
+  const dropzoneText = document.getElementById("dropzone-text");
+  const fileInput = document.getElementById("file-input");
+  const previewWrap = document.getElementById("preview-wrap");
+  const preview = document.getElementById("preview");
+  const fileNameEl = document.getElementById("file-name");
+  const analyzeBtn = document.getElementById("analyze-btn");
+  const statusEl = document.getElementById("status");
+  const resultsEl = document.getElementById("results");
+  const modeBtns = document.querySelectorAll(".mode-btn");
+
+  let selectedFile = null;
+  let mode = "image";
+
+  const FITS_ACCEPT = ".fits,.fit,.fits.gz";
+
+  function setMode(m) {
+    mode = m;
+    modeBtns.forEach((b) => b.classList.toggle("active", b.dataset.mode === m));
+    if (m === "fits") {
+      fileInput.setAttribute("accept", FITS_ACCEPT);
+      dropzoneText.innerHTML = "<strong>Klik untuk pilih file FITS</strong><br>atau drag & drop di sini (.fits / .fit / .fits.gz)";
+    } else {
+      fileInput.setAttribute("accept", "image/jpeg,image/png,image/webp");
+      dropzoneText.innerHTML = "<strong>Klik untuk pilih gambar</strong><br>atau drag & drop di sini (JPG / PNG / WEBP)";
+    }
+    clearResults();
+  }
+
+  modeBtns.forEach((b) => b.addEventListener("click", () => setMode(b.dataset.mode)));
+
+  dropzone.addEventListener("click", () => fileInput.click());
+
+  dropzone.addEventListener("dragover", (e) => {
+    e.preventDefault();
+    dropzone.classList.add("drag");
+  });
+  dropzone.addEventListener("dragleave", () => dropzone.classList.remove("drag"));
+  dropzone.addEventListener("drop", (e) => {
+    e.preventDefault();
+    dropzone.classList.remove("drag");
+    if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
+  });
+
+  fileInput.addEventListener("change", () => {
+    if (fileInput.files.length) handleFile(fileInput.files[0]);
+  });
+
+  function clearResults() {
+    statusEl.textContent = "";
+    statusEl.className = "";
+    resultsEl.style.display = "none";
+    resultsEl.innerHTML = "";
+  }
+
+  function handleFile(file) {
+    selectedFile = file;
+    fileNameEl.textContent = file.name;
+    fileNameEl.style.display = "block";
+    clearResults();
+
+    if (mode === "fits") {
+      analyzeBtn.disabled = true;
+      statusEl.textContent = "Merender preview...";
+      previewWrap.style.display = "block";
+      preview.style.opacity = "0.35";
+
+      const formData = new FormData();
+      formData.append("file", file);
+      fetch(FITS_PREVIEW_URL, { method: "POST", body: formData })
+        .then((res) => {
+          if (!res.ok) return Promise.reject(new Error("preview gagal"));
+          return res.blob();
+        })
+        .then((blob) => {
+          preview.src = URL.createObjectURL(blob);
+          preview.style.opacity = "1";
+          analyzeBtn.disabled = false;
+          statusEl.textContent = "";
+        })
+        .catch(() => {
+          preview.style.opacity = "1";
+          analyzeBtn.disabled = false;
+          statusEl.textContent = "Preview tidak tersedia, tapi file tetap bisa dianalisis.";
+        });
+    } else {
+      preview.src = URL.createObjectURL(file);
+      previewWrap.style.display = "block";
+      analyzeBtn.disabled = false;
+    }
+  }
+
+  analyzeBtn.addEventListener("click", async () => {
+    if (!selectedFile) return;
+
+    analyzeBtn.disabled = true;
+    statusEl.textContent = "Menganalisis...";
+    statusEl.className = "";
+    resultsEl.style.display = "none";
+
+    const formData = new FormData();
+    formData.append("file", selectedFile);
+    const url = mode === "fits" ? FITS_API_URL : IMAGE_API_URL;
+
+    try {
+      const res = await fetch(url, { method: "POST", body: formData });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.detail || `Server error (${res.status})`);
+      }
+
+      const data = await res.json();
+      if (mode === "fits") renderFitsResult(data);
+      else renderResults(data.top3);
+      statusEl.textContent = "";
+    } catch (e) {
+      statusEl.textContent = `Gagal: ${e.message}. Pastiin backend-nya lagi jalan di ${url}.`;
+      statusEl.className = "error";
+    } finally {
+      analyzeBtn.disabled = false;
+    }
+  });
+
+  function renderResults(top3) {
+    resultsEl.innerHTML = "";
+    top3.forEach((item) => {
+      const pct = Math.round(item.confidence * 100);
+      const row = document.createElement("div");
+      row.className = "result-row";
+      row.innerHTML = `
+        <div class="result-label">
+          <span class="name">${item.label.replace("_", " ")}</span>
+          <span class="pct">${pct}%</span>
+        </div>
+        <div class="bar-track"><div class="bar-fill" style="width:0%"></div></div>
+      `;
+      resultsEl.appendChild(row);
+      requestAnimationFrame(() => {
+        row.querySelector(".bar-fill").style.width = pct + "%";
+      });
+    });
+    const top = top3[0];
+    if (top && top.explanation) {
+      const exp = document.createElement("p");
+      exp.style.cssText = "margin:14px 0 0;font-size:0.85rem;color:var(--muted);line-height:1.5;";
+      exp.textContent = top.explanation;
+      resultsEl.appendChild(exp);
+    }
+    resultsEl.style.display = "block";
+  }
+
+  function renderFitsResult(data) {
+    const item = data.prediction;
+    const isGalaxy = item.label === "galaxy";
+    const display = isGalaxy ? "Galaksi" : "Bintang";
+    const badge = isGalaxy ? "galaxy" : "star";
+    const pct = Math.round(item.confidence * 100);
+
+    const head = document.createElement("div");
+    head.className = "result-label";
+    head.style.fontSize = "1rem";
+    head.innerHTML = `<span class="name">${display}<span class="badge">${badge}</span></span><span class="pct">${pct}%</span>`;
+    resultsEl.appendChild(head);
+
+    const row = document.createElement("div");
+    row.className = "result-row";
+    row.innerHTML = `<div class="bar-track"><div class="bar-fill" style="width:0%"></div></div>`;
+    resultsEl.appendChild(row);
+    requestAnimationFrame(() => {
+      row.querySelector(".bar-fill").style.width = pct + "%";
+    });
+
+    const probs = data.probabilities || {};
+    const notes = [];
+    if (typeof probs.star === "number" && typeof probs.galaxy === "number") {
+      notes.push(`star ${Math.round(probs.star * 100)}% · galaxy ${Math.round(probs.galaxy * 100)}%`);
+    }
+    const q = data.quality || {};
+    if (q.saturated) notes.push("terdeteksi saturasi");
+    if ((q.nan_fraction || 0) > 0.001) notes.push(`NaN ${(q.nan_fraction * 100).toFixed(1)}%`);
+
+    const note = document.createElement("p");
+    note.style.cssText = "margin:14px 0 0;font-size:0.8rem;color:var(--muted);";
+    note.textContent = notes.length ? notes.join(" · ") : "";
+    resultsEl.appendChild(note);
+
+    if (item.explanation) {
+      const exp = document.createElement("p");
+      exp.style.cssText = "margin:14px 0 0;font-size:0.85rem;color:var(--muted);line-height:1.5;";
+      exp.textContent = item.explanation;
+      resultsEl.appendChild(exp);
+    }
+
+    if (data.note) {
+      const note2 = document.createElement("p");
+      note2.style.cssText = "margin:10px 0 0;font-size:0.75rem;color:var(--gold);opacity:0.9;";
+      note2.textContent = data.note;
+      resultsEl.appendChild(note2);
+    }
+
+    resultsEl.style.display = "block";
+  }
+
+  // starfield tipis di background, murni dekoratif
+  const canvas = document.getElementById("stars");
+  const ctx = canvas.getContext("2d");
+  let stars = [];
+
+  function resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    const count = Math.floor((canvas.width * canvas.height) / 9000);
+    stars = Array.from({ length: count }, () => ({
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height,
+      r: Math.random() * 1.2 + 0.2,
+      phase: Math.random() * Math.PI * 2,
+    }));
+  }
+
+  function draw(t) {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    for (const s of stars) {
+      const twinkle = 0.5 + 0.5 * Math.sin(t / 1200 + s.phase);
+      ctx.globalAlpha = 0.25 + twinkle * 0.5;
+      ctx.fillStyle = "#f2f0ea";
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    requestAnimationFrame(draw);
+  }
+
+  window.addEventListener("resize", resize);
+  resize();
+  requestAnimationFrame(draw);
+</script>
+
+</body>
+</html>

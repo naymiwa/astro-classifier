@@ -1,0 +1,130 @@
+# ===== Python =====
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+.eggs/
+build/
+dist/
+.installed.cfg
+MANIFEST
+
+# Virtual environment
+.venv/
+venv/
+env/
+ENV/
+
+# Environment / secrets
+.env
+.env.*
+*.local
+secrets.json
+
+# ===== OS / editor =====
+.DS_Store
+Thumbs.db
+desktop.ini
+ehthumbs.db
+$RECYCLE.BIN/
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
+*.sublime-*
+
+# ===== Logs / temp =====
+*.log
+logs/
+*.tmp
+*.bak
+*.cache
+.cache/
+pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# ===== Jupyter =====
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# ===== Trained models (besar, regenerable dari skrip training) =====
+*.keras
+*.h5
+*.pb
+*.onnx
+*.tflite
+*.ckpt
+*.weights.*
+best_model.keras
+best_model.backup.keras
+fits_star_galaxy_model.keras
+fits_star_galaxy_model.backup.keras
+best_model_test.keras
+
+# Model weights folder (TF SavedModel format)
+saved_model/
+variables/
+assets/
+
+# ===== Dataset & data besar (jangan masuk git) =====
+# ZIP dataset mentah
+archive.zip
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+*.7z
+*.rar
+
+# Dataset gambar Kaggle (hasil extract archive.zip)
+space images/
+space-images-category-metadata (1).json
+
+# Dataset FITS sintetis (regenerable via generate_dataset.py)
+classification_dataset/
+classification_labels.csv
+
+# Dataset FITS real (diunduh via fetch_real_dataset.py)
+real_dataset/
+real_labels.csv
+
+# File FITS contoh / pengujian (di root, bukan bagian source)
+*.fits
+*.fit
+*.fits.gz
+*.fit.gz
+many_stars scale.fits
+contoh fits bintang.fits
+
+# Folder demo (file contoh besar, regenerable)
+demo/
+
+# ===== TensorFlow / Keras runtime =====
+*.tfrecord
+*.tfrecords
+events.out.tfevents.*
+tensorboard/
+tb_logs/
+runs/
+checkpoints/
+ckpt-*
+
+# ===== Weights & Biases / ML tracking =====
+wandb/
+mlruns/
+mlartifacts/
+
+# ===== Misc =====
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.bmp
+*.webp
+outputs/
+results/
+notebooks/.ipynb_checkpoints/
