@@ -6,7 +6,7 @@
 <title>Astro Classifier</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=Cormorant+Garamond:wght@500;600;700&display=swap" rel="stylesheet">
 <style>
   :root {
     --bg: #0a0d1a;
@@ -221,6 +221,26 @@
   }
 
   #status.error { color: #ff8080; }
+
+  #card-btn {
+    display: none;
+    width: 100%;
+    margin-top: 18px;
+    padding: 13px;
+    border: 1px solid var(--gold);
+    border-radius: 10px;
+    background: rgba(255, 184, 107, 0.08);
+    color: var(--gold);
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 600;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: background 0.15s ease, transform 0.1s ease;
+  }
+
+  #card-btn:hover { background: rgba(255, 184, 107, 0.16); }
+  #card-btn:active { transform: scale(0.99); }
+  #card-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 </style>
 </head>
 <body>
@@ -254,6 +274,8 @@
     <div id="status"></div>
 
     <div id="results"></div>
+
+    <button id="card-btn">✶ Create Your Cosmic Card</button>
   </div>
 </div>
 
@@ -272,9 +294,12 @@
   const statusEl = document.getElementById("status");
   const resultsEl = document.getElementById("results");
   const modeBtns = document.querySelectorAll(".mode-btn");
+  const cardBtn = document.getElementById("card-btn");
 
   let selectedFile = null;
   let mode = "image";
+  // Data prediksi terakhir yang sukses — dipakai buat "Your Cosmic Card".
+  let lastCard = null;
 
   const FITS_ACCEPT = ".fits,.fit,.fits.gz";
 
@@ -315,6 +340,8 @@
     statusEl.className = "";
     resultsEl.style.display = "none";
     resultsEl.innerHTML = "";
+    lastCard = null;
+    cardBtn.style.display = "none";
   }
 
   function handleFile(file) {
@@ -378,6 +405,7 @@
       if (mode === "fits") renderFitsResult(data);
       else renderResults(data.top3);
       statusEl.textContent = "";
+      rememberCard(data);
     } catch (e) {
       statusEl.textContent = `Gagal: ${e.message}. Pastiin backend-nya lagi jalan di ${url}.`;
       statusEl.className = "error";
@@ -466,6 +494,55 @@
     resultsEl.style.display = "block";
   }
 
+  // ---- Your Cosmic Card -------------------------------------------------
+  // Simpan hasil prediksi sukses + sumber gambar, lalu munculkan tombolnya.
+  function rememberCard(data) {
+    const top = data.prediction || (data.top3 && data.top3[0]);
+    if (!top) return;
+    lastCard = {
+      mode,
+      label: top.label,
+      confidence: top.confidence,
+      file: selectedFile,
+      imageUrl: preview.src, // gambar asli (image) / preview FITS yang sudah dirender
+      numClasses: mode === "fits" ? 2 : 6,
+    };
+    cardBtn.style.display = "block";
+  }
+
+  cardBtn.addEventListener("click", async () => {
+    if (!lastCard || !window.CosmicCard) return;
+    const originalText = cardBtn.textContent;
+    cardBtn.disabled = true;
+    cardBtn.textContent = "Membuat kartu...";
+    try {
+      let imageUrl = lastCard.imageUrl;
+      // Untuk FITS: minta preview yang SAMA tapi resolusi lebih tinggi
+      // supaya tajam di kartu 1080px. Kalau gagal, pakai preview yang ada.
+      if (lastCard.mode === "fits" && lastCard.file) {
+        try {
+          const fd = new FormData();
+          fd.append("file", lastCard.file);
+          const res = await fetch(FITS_PREVIEW_URL + "?size=900", { method: "POST", body: fd });
+          if (res.ok) imageUrl = URL.createObjectURL(await res.blob());
+        } catch (_) { /* fallback ke preview kecil */ }
+      }
+      await CosmicCard.open({
+        imageUrl,
+        label: lastCard.label,
+        confidence: lastCard.confidence,
+        sourceType: lastCard.mode === "fits" ? "FITS" : "Image",
+        numClasses: lastCard.numClasses,
+      });
+    } catch (e) {
+      statusEl.textContent = `Gagal membuat kartu: ${e.message}`;
+      statusEl.className = "error";
+    } finally {
+      cardBtn.disabled = false;
+      cardBtn.textContent = originalText;
+    }
+  });
+
   // starfield tipis di background, murni dekoratif
   const canvas = document.getElementById("stars");
   const ctx = canvas.getContext("2d");
@@ -500,6 +577,7 @@
   resize();
   requestAnimationFrame(draw);
 </script>
+<script src="/static/cosmic-card.js"></script>
 
 </body>
 </html>

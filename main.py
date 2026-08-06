@@ -22,9 +22,10 @@ Endpoint:
 import io
 
 import numpy as np
-from fastapi import FastAPI, File, HTTPException, UploadFile
+from fastapi import FastAPI, File, HTTPException, Query, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, Response
+from fastapi.staticfiles import StaticFiles
 from PIL import Image
 from tensorflow import keras
 
@@ -102,6 +103,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Asset frontend statis (mis. generator "Your Cosmic Card").
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 print("Loading model...")
 model = keras.models.load_model(MODEL_PATH)
@@ -224,7 +228,10 @@ async def predict_fits(file: UploadFile = File(...)):
 
 
 @app.post("/fits_preview")
-async def fits_preview(file: UploadFile = File(...)):
+async def fits_preview(
+    file: UploadFile = File(...),
+    size: int = Query(300, ge=64, le=1200),
+):
     if not is_fits_file(file.filename):
         raise HTTPException(
             status_code=400,
@@ -238,7 +245,7 @@ async def fits_preview(file: UploadFile = File(...)):
             detail="File terlalu besar. Maksimal 25 MB.",
         )
     try:
-        png = fits_utils.render_preview(fits_bytes)
+        png = fits_utils.render_preview(fits_bytes, size=size)
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Gagal merender preview: {e}")
 
