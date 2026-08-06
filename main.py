@@ -212,7 +212,23 @@ async def predict_fits(file: UploadFile = File(...)):
     p_star = 1.0 - p_galaxy
     label = FITS_CLASS_NAMES[1] if p_galaxy >= 0.5 else FITS_CLASS_NAMES[0]
 
+    # Peringatan reliabilitas: data yang banyak NaN / tersaturasi berada di
+    # luar sebaran data latih, jadi prediksinya kemungkinan besar tidak akurat.
+    warnings = []
+    if quality["nan_fraction"] > 0.2:
+        warnings.append(
+            f"{quality['nan_fraction'] * 100:.1f}% piksel tidak valid (NaN). "
+            "Data seperti ini di luar sebaran data latih — hasil klasifikasi "
+            "kemungkinan besar tidak akurat."
+        )
+    if quality["saturated"]:
+        warnings.append(
+            "Terdeteksi saturasi: objek terang bisa tampak melebar (extended) "
+            "sehingga bintang mudah tertukar sebagai galaksi."
+        )
+
     return {
+        "warnings": warnings,
         "prediction": {
             "label": label,
             "confidence": round(max(p_star, p_galaxy), 4),

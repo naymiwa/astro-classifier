@@ -443,6 +443,17 @@
   }
 
   function renderFitsResult(data) {
+    // Peringatan reliabilitas duluan, biar langsung kelihatan.
+    (data.warnings || []).forEach((w) => {
+      const warn = document.createElement("p");
+      warn.style.cssText =
+        "margin:0 0 14px;padding:10px 12px;border-radius:8px;font-size:0.8rem;" +
+        "line-height:1.5;color:#ffb3b3;background:rgba(255,128,128,0.08);" +
+        "border:1px solid rgba(255,128,128,0.25);";
+      warn.textContent = `⚠ ${w}`;
+      resultsEl.appendChild(warn);
+    });
+
     const item = data.prediction;
     const isGalaxy = item.label === "galaxy";
     const display = isGalaxy ? "Galaksi" : "Bintang";
