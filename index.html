@@ -241,6 +241,38 @@
   #card-btn:hover { background: rgba(255, 184, 107, 0.16); }
   #card-btn:active { transform: scale(0.99); }
   #card-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .site-footer {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 18px;
+    margin-top: 28px;
+    padding-top: 20px;
+  }
+
+  .site-footer a {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    color: var(--muted);
+    text-decoration: none;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 0.8rem;
+    font-weight: 500;
+    transition: color 0.15s ease;
+  }
+
+  .site-footer a:hover { color: var(--accent); }
+
+  .site-footer a svg { width: 15px; height: 15px; fill: currentColor; flex-shrink: 0; }
+
+  .site-footer .footer-divider {
+    width: 3px;
+    height: 3px;
+    border-radius: 50%;
+    background: var(--line);
+  }
 </style>
 </head>
 <body>
@@ -249,8 +281,8 @@
 
 <div class="wrap">
   <p class="eyebrow">Deep Space Classifier</p>
-  <h1>What celestial object is this?</h1>
-  <p class="sub">Upload an image or a FITS file from telescope observations — the model will guess its category.</p>
+  <h1>Identify Celestial Objects</h1>
+  <p class="sub">Upload an image or a FITS file from telescope observations, and the model will classify its category.</p>
 
   <div class="panel">
     <div class="mode-toggle">
@@ -277,6 +309,18 @@
 
     <button id="card-btn">✶ Create Your Cosmic Card</button>
   </div>
+
+  <footer class="site-footer">
+    <a href="https://www.linkedin.com/in/nayla-aqila-argia-241637322/" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.049c.476-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 1 1 0-4.124 2.062 2.062 0 0 1 0 4.124zM7.114 20.452H3.558V9h3.556v11.452z"/></svg>
+      <span>LinkedIn</span>
+    </a>
+    <span class="footer-divider"></span>
+    <a href="https://www.instagram.com/naylargia" target="_blank" rel="noopener noreferrer" aria-label="Instagram">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.012-3.584.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838a6.163 6.163 0 1 0 0 12.326 6.163 6.163 0 0 0 0-12.326zm0 10.162a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm6.406-11.845a1.44 1.44 0 1 0 0 2.881 1.44 1.44 0 0 0 0-2.881z"/></svg>
+      <span>@naylargia</span>
+    </a>
+  </footer>
 </div>
 
 <script>
