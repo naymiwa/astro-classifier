@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -249,17 +249,17 @@
 
 <div class="wrap">
   <p class="eyebrow">Deep Space Classifier</p>
-  <h1>Apa objek langit ini?</h1>
-  <p class="sub">Upload gambar atau file FITS hasil observasi teleskop — model bakal nebak kategorinya.</p>
+  <h1>What celestial object is this?</h1>
+  <p class="sub">Upload an image or a FITS file from telescope observations — the model will guess its category.</p>
 
   <div class="panel">
     <div class="mode-toggle">
-      <button type="button" class="mode-btn active" data-mode="image">Gambar</button>
+      <button type="button" class="mode-btn active" data-mode="image">Image</button>
       <button type="button" class="mode-btn" data-mode="fits">FITS</button>
     </div>
 
     <div id="dropzone">
-      <p id="dropzone-text"><strong>Klik untuk pilih gambar</strong><br>atau drag & drop di sini (JPG / PNG / WEBP)</p>
+      <p id="dropzone-text"><strong>Click to choose an image</strong><br>or drag & drop here (JPG / PNG / WEBP)</p>
       <input type="file" id="file-input" accept="image/jpeg,image/png,image/webp">
     </div>
 
@@ -269,7 +269,7 @@
       <img id="preview" alt="Preview">
     </div>
 
-    <button id="analyze-btn" disabled>Analisis</button>
+    <button id="analyze-btn" disabled>Analyze</button>
 
     <div id="status"></div>
 
@@ -298,7 +298,7 @@
 
   let selectedFile = null;
   let mode = "image";
-  // Data prediksi terakhir yang sukses — dipakai buat "Your Cosmic Card".
+  // Last successful prediction data — used for "Your Cosmic Card".
   let lastCard = null;
 
   const FITS_ACCEPT = ".fits,.fit,.fits.gz";
@@ -308,10 +308,10 @@
     modeBtns.forEach((b) => b.classList.toggle("active", b.dataset.mode === m));
     if (m === "fits") {
       fileInput.setAttribute("accept", FITS_ACCEPT);
-      dropzoneText.innerHTML = "<strong>Klik untuk pilih file FITS</strong><br>atau drag & drop di sini (.fits / .fit / .fits.gz)";
+      dropzoneText.innerHTML = "<strong>Click to choose a FITS file</strong><br>or drag & drop here (.fits / .fit / .fits.gz)";
     } else {
       fileInput.setAttribute("accept", "image/jpeg,image/png,image/webp");
-      dropzoneText.innerHTML = "<strong>Klik untuk pilih gambar</strong><br>atau drag & drop di sini (JPG / PNG / WEBP)";
+      dropzoneText.innerHTML = "<strong>Click to choose an image</strong><br>or drag & drop here (JPG / PNG / WEBP)";
     }
     clearResults();
   }
@@ -352,7 +352,7 @@
 
     if (mode === "fits") {
       analyzeBtn.disabled = true;
-      statusEl.textContent = "Merender preview...";
+      statusEl.textContent = "Rendering preview...";
       previewWrap.style.display = "block";
       preview.style.opacity = "0.35";
 
@@ -360,7 +360,7 @@
       formData.append("file", file);
       fetch(FITS_PREVIEW_URL, { method: "POST", body: formData })
         .then((res) => {
-          if (!res.ok) return Promise.reject(new Error("preview gagal"));
+          if (!res.ok) return Promise.reject(new Error("preview failed"));
           return res.blob();
         })
         .then((blob) => {
@@ -372,7 +372,7 @@
         .catch(() => {
           preview.style.opacity = "1";
           analyzeBtn.disabled = false;
-          statusEl.textContent = "Preview tidak tersedia, tapi file tetap bisa dianalisis.";
+          statusEl.textContent = "Preview unavailable, but the file can still be analyzed.";
         });
     } else {
       preview.src = URL.createObjectURL(file);
@@ -385,7 +385,7 @@
     if (!selectedFile) return;
 
     analyzeBtn.disabled = true;
-    statusEl.textContent = "Menganalisis...";
+    statusEl.textContent = "Analyzing...";
     statusEl.className = "";
     resultsEl.style.display = "none";
 
@@ -407,7 +407,7 @@
       statusEl.textContent = "";
       rememberCard(data);
     } catch (e) {
-      statusEl.textContent = `Gagal: ${e.message}. Pastiin backend-nya lagi jalan di ${url}.`;
+      statusEl.textContent = `Failed: ${e.message}. Make sure the backend is running at ${url}.`;
       statusEl.className = "error";
     } finally {
       analyzeBtn.disabled = false;
@@ -443,7 +443,7 @@
   }
 
   function renderFitsResult(data) {
-    // Peringatan reliabilitas duluan, biar langsung kelihatan.
+    // Reliability warnings go first, so they're immediately visible.
     (data.warnings || []).forEach((w) => {
       const warn = document.createElement("p");
       warn.style.cssText =
@@ -456,7 +456,7 @@
 
     const item = data.prediction;
     const isGalaxy = item.label === "galaxy";
-    const display = isGalaxy ? "Galaksi" : "Bintang";
+    const display = isGalaxy ? "Galaxy" : "Star";
     const badge = isGalaxy ? "galaxy" : "star";
     const pct = Math.round(item.confidence * 100);
 
@@ -480,7 +480,7 @@
       notes.push(`star ${Math.round(probs.star * 100)}% · galaxy ${Math.round(probs.galaxy * 100)}%`);
     }
     const q = data.quality || {};
-    if (q.saturated) notes.push("terdeteksi saturasi");
+    if (q.saturated) notes.push("saturation detected");
     if ((q.nan_fraction || 0) > 0.001) notes.push(`NaN ${(q.nan_fraction * 100).toFixed(1)}%`);
 
     const note = document.createElement("p");
@@ -506,7 +506,7 @@
   }
 
   // ---- Your Cosmic Card -------------------------------------------------
-  // Simpan hasil prediksi sukses + sumber gambar, lalu munculkan tombolnya.
+  // Remember the last successful prediction + image source, then show the button.
   function rememberCard(data) {
     const top = data.prediction || (data.top3 && data.top3[0]);
     if (!top) return;
@@ -515,7 +515,7 @@
       label: top.label,
       confidence: top.confidence,
       file: selectedFile,
-      imageUrl: preview.src, // gambar asli (image) / preview FITS yang sudah dirender
+      imageUrl: preview.src, // original image (image mode) / already-rendered FITS preview
       numClasses: mode === "fits" ? 2 : 6,
     };
     cardBtn.style.display = "block";
@@ -525,18 +525,18 @@
     if (!lastCard || !window.CosmicCard) return;
     const originalText = cardBtn.textContent;
     cardBtn.disabled = true;
-    cardBtn.textContent = "Membuat kartu...";
+    cardBtn.textContent = "Creating card...";
     try {
       let imageUrl = lastCard.imageUrl;
-      // Untuk FITS: minta preview yang SAMA tapi resolusi lebih tinggi
-      // supaya tajam di kartu 1080px. Kalau gagal, pakai preview yang ada.
+      // For FITS: request the SAME preview but at a higher resolution so
+      // it stays sharp on the 1080px card. Fall back to the existing preview on failure.
       if (lastCard.mode === "fits" && lastCard.file) {
         try {
           const fd = new FormData();
           fd.append("file", lastCard.file);
           const res = await fetch(FITS_PREVIEW_URL + "?size=900", { method: "POST", body: fd });
           if (res.ok) imageUrl = URL.createObjectURL(await res.blob());
-        } catch (_) { /* fallback ke preview kecil */ }
+        } catch (_) { /* fall back to the small preview */ }
       }
       await CosmicCard.open({
         imageUrl,
@@ -546,7 +546,7 @@
         numClasses: lastCard.numClasses,
       });
     } catch (e) {
-      statusEl.textContent = `Gagal membuat kartu: ${e.message}`;
+      statusEl.textContent = `Failed to create card: ${e.message}`;
       statusEl.className = "error";
     } finally {
       cardBtn.disabled = false;
@@ -554,7 +554,7 @@
     }
   });
 
-  // starfield tipis di background, murni dekoratif
+  // subtle background starfield, purely decorative
   const canvas = document.getElementById("stars");
   const ctx = canvas.getContext("2d");
   let stars = [];

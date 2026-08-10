@@ -1,15 +1,15 @@
 /**
- * Your Cosmic Card — generator kartu 9:16 (1080x1920) gaya tarot vintage
- * untuk hasil klasifikasi astronomi.
+ * Your Cosmic Card — 9:16 (1080x1920) vintage-tarot-style card generator
+ * for astronomy classification results.
  *
- * Sepenuhnya client-side (Canvas 2D). Gambar asli TIDAK diubah warnanya,
- * tidak difilter, tidak di-stylize — hanya di-resize + crop (cover) ke
- * dalam bingkai dekoratif.
+ * Fully client-side (Canvas 2D). The original image's colors are NOT
+ * changed, not filtered, not stylized — it is only resized + cropped
+ * (cover) into a decorative frame.
  *
- * API publik:
+ * Public API:
  *   CosmicCard.open({ imageUrl, label, confidence, sourceType, numClasses })
- *     -> generate kartu, tampilkan modal preview + tombol download PNG.
- *   CosmicCard.generate(opts) -> Promise<HTMLCanvasElement> (tanpa modal).
+ *     -> generates the card, shows a preview modal + PNG download button.
+ *   CosmicCard.generate(opts) -> Promise<HTMLCanvasElement> (no modal).
  */
 (function () {
   "use strict";
@@ -17,18 +17,18 @@
   var CARD_W = 1080;
   var CARD_H = 1920;
 
-  // ---- Palet "kertas tua" -------------------------------------------------
+  // ---- "Aged paper" palette ------------------------------------------------
   var PAPER_TOP = "#f0e7d4";
   var PAPER_MID = "#ece1ca";
   var PAPER_BOT = "#e5d7bc";
-  var INK = "#3b3226";        // teks utama (tinta tua)
+  var INK = "#3b3226";        // main text (aged ink)
   var INK_SOFT = "#4c4232";   // body text
-  var MUTED = "#7d6f56";      // label kecil
+  var MUTED = "#7d6f56";      // small labels
   var FAINT = "#93835f";      // disclaimer
-  var GOLD = "#9a7b3f";       // ornamen emas pudar
+  var GOLD = "#9a7b3f";       // faded gold ornament
   var GOLD_SOFT = "rgba(154, 123, 63, 0.55)";
 
-  // ---- Nomor Romawi tetap per kelas (JANGAN diacak) -----------------------
+  // ---- Fixed Roman numeral per class (DO NOT randomize) --------------------
   var NUMERALS = {
     galaxies: "I",
     galaxy: "I",
@@ -40,7 +40,7 @@
     cosmos_space: "VI",
   };
 
-  // ---- Nama tampilan per kelas -------------------------------------------
+  // ---- Display name per class ---------------------------------------------
   var DISPLAY_NAMES = {
     galaxies: "Galaxy",
     galaxy: "Galaxy",
@@ -52,7 +52,7 @@
     cosmos_space: "Deep Space",
   };
 
-  // ---- Penjelasan singkat terkurasi (bukan hasil AI) ----------------------
+  // ---- Short curated explanations (not AI-generated) -----------------------
   var CARD_EXPLANATIONS = {
     galaxies:
       "A galaxy is a massive system of stars, gas, dust, and dark matter " +
@@ -96,14 +96,14 @@
   var SANS = '"Inter", "Helvetica Neue", Arial, sans-serif';
 
   // ========================================================================
-  // Util gambar
+  // Image utilities
   // ========================================================================
 
   function loadImage(url) {
     return new Promise(function (resolve, reject) {
       var img = new Image();
       img.onload = function () { resolve(img); };
-      img.onerror = function () { reject(new Error("Gagal memuat gambar untuk kartu.")); };
+      img.onerror = function () { reject(new Error("Failed to load image for the card.")); };
       img.src = url;
     });
   }
@@ -116,10 +116,10 @@
       document.fonts.load('700 104px "Cormorant Garamond"'),
       document.fonts.load('400 29px "Inter"'),
       document.fonts.load('600 26px "Inter"'),
-    ]).catch(function () { /* fallback ke font sistem */ });
+    ]).catch(function () { /* fall back to system fonts */ });
   }
 
-  // Gambar dimuat "cover": di-crop dari tengah, TANPA distorsi & TANPA filter.
+  // Image is loaded "cover": cropped from the center, WITHOUT distortion or filters.
   function drawImageCover(ctx, img, x, y, w, h) {
     var scale = Math.max(w / img.width, h / img.height);
     var sw = w / scale;
@@ -129,7 +129,7 @@
     ctx.drawImage(img, sx, sy, sw, sh, x, y, w, h);
   }
 
-  // Teks dengan letter-spacing manual (kompatibel semua browser).
+  // Text with manual letter-spacing (works across all browsers).
   function drawTracked(ctx, text, cx, y, tracking) {
     var chars = text.split("");
     var total = 0;
@@ -166,10 +166,10 @@
   }
 
   // ========================================================================
-  // Ornamen
+  // Ornaments
   // ========================================================================
 
-  // Bintang 4 titik (sparkle) klasik.
+  // Classic 4-point star (sparkle).
   function star4(ctx, cx, cy, r, color) {
     var k = r * 0.18;
     ctx.beginPath();
@@ -183,7 +183,7 @@
     ctx.fill();
   }
 
-  // Bintang 8 titik: dua sparkle bertumpuk, satu diputar 45°.
+  // 8-point star: two overlapping sparkles, one rotated 45°.
   function star8(ctx, cx, cy, r, color) {
     star4(ctx, cx, cy, r, color);
     ctx.save();
@@ -218,11 +218,11 @@
   }
 
   // ========================================================================
-  // Latar kertas tua
+  // Aged paper background
   // ========================================================================
 
   function drawPaper(ctx) {
-    // Dasar krem dengan gradasi halus.
+    // Cream base with a subtle gradient.
     var g = ctx.createLinearGradient(0, 0, 0, CARD_H);
     g.addColorStop(0, PAPER_TOP);
     g.addColorStop(0.5, PAPER_MID);
@@ -230,7 +230,7 @@
     ctx.fillStyle = g;
     ctx.fillRect(0, 0, CARD_W, CARD_H);
 
-    // Bercak lembab / penuaan (blotch) — radial gradient alpha sangat rendah.
+    // Damp / aging blotches — very low-alpha radial gradients.
     var i;
     for (i = 0; i < 26; i++) {
       var bx = Math.random() * CARD_W;
@@ -247,7 +247,7 @@
       ctx.fillRect(bx - br, by - br, br * 2, br * 2);
     }
 
-    // Mottling frekuensi rendah: noise kecil di-upscale.
+    // Low-frequency mottling: small noise upscaled.
     var nW = 180, nH = 320;
     var off = document.createElement("canvas");
     off.width = nW;
@@ -267,7 +267,7 @@
     ctx.drawImage(off, 0, 0, CARD_W, CARD_H);
     ctx.restore();
 
-    // Speckle halus resolusi penuh (butiran kertas).
+    // Fine full-resolution speckle (paper grain).
     ctx.save();
     for (i = 0; i < 2200; i++) {
       var sx = Math.random() * CARD_W;
@@ -279,7 +279,7 @@
     }
     ctx.restore();
 
-    // Serat kertas tipis.
+    // Thin paper fibers.
     ctx.save();
     ctx.globalAlpha = 0.03;
     ctx.strokeStyle = "#7a684a";
@@ -296,7 +296,7 @@
     }
     ctx.restore();
 
-    // Vignette tepian menua.
+    // Aged-edge vignette.
     var vg = ctx.createRadialGradient(
       CARD_W / 2, CARD_H / 2, CARD_H * 0.28,
       CARD_W / 2, CARD_H / 2, CARD_H * 0.72
@@ -308,21 +308,21 @@
   }
 
   // ========================================================================
-  // Bingkai dekoratif kartu
+  // Decorative card border
   // ========================================================================
 
   function drawBorder(ctx) {
-    // Garis luar tebal.
+    // Thick outer line.
     ctx.strokeStyle = INK;
     ctx.lineWidth = 3;
     ctx.strokeRect(42, 42, CARD_W - 84, CARD_H - 84);
 
-    // Garis dalam tipis.
+    // Thin inner line.
     ctx.strokeStyle = GOLD_SOFT;
     ctx.lineWidth = 1.4;
     ctx.strokeRect(58, 58, CARD_W - 116, CARD_H - 116);
 
-    // Ornamen sudut: bintang 8 titik + dua titik diagonal.
+    // Corner ornaments: 8-point star + two diagonal dots.
     var corners = [
       [50, 50, 1, 1],
       [CARD_W - 50, 50, -1, 1],
@@ -336,12 +336,12 @@
       dot(ctx, c[0] + c[2] * 66, c[1] + c[3] * 66, 1.6, GOLD_SOFT);
     }
 
-    // Wajik kecil di tengah sisi kiri & kanan.
+    // Small diamonds centered on the left & right edges.
     diamond(ctx, 50, CARD_H / 2, 8, GOLD_SOFT, false);
     diamond(ctx, CARD_W - 50, CARD_H / 2, 8, GOLD_SOFT, false);
   }
 
-  // Divider horizontal: garis + wajik ujung + bintang tengah.
+  // Horizontal divider: line + end diamonds + center star.
   function drawDivider(ctx, cy, halfLen, starR) {
     var cx = CARD_W / 2;
     ctx.strokeStyle = GOLD_SOFT;
@@ -358,16 +358,16 @@
   }
 
   // ========================================================================
-  // Render kartu utama
+  // Main card render
   // ========================================================================
 
   /**
    * opts:
-   *   imageUrl   : URL gambar asli (object URL / blob URL) — WAJIB
-   *   label      : label kelas mentah dari model (mis. "nebula")
+   *   imageUrl   : URL of the original image (object URL / blob URL) — REQUIRED
+   *   label      : raw class label from the model (e.g. "nebula")
    *   confidence : 0..1
    *   sourceType : "Image" | "FITS"
-   *   numClasses : jumlah kelas model (6 atau 2)
+   *   numClasses : number of classes the model supports (6 or 2)
    */
   function generate(opts) {
     return Promise.all([loadImage(opts.imageUrl), loadFonts()]).then(function (res) {
@@ -386,7 +386,7 @@
       var confPct = Math.min(100, opts.confidence * 100);
       var confText = confPct >= 99.95 ? "100%" : confPct.toFixed(1) + "%";
 
-      // ---- 1. Kertas + bingkai -----------------------------------------
+      // ---- 1. Paper + border --------------------------------------------
       drawPaper(ctx);
       drawBorder(ctx);
 
@@ -395,12 +395,12 @@
 
       var cx = CARD_W / 2;
 
-      // ---- 2. Nomor Romawi + judul kecil -------------------------------
+      // ---- 2. Roman numeral + small title --------------------------------
       ctx.fillStyle = INK;
       ctx.font = '600 96px ' + SERIF;
       ctx.fillText(numeral, cx, 196);
 
-      // Garis pengapit numeral.
+      // Lines flanking the numeral.
       var numW = ctx.measureText(numeral).width;
       ctx.strokeStyle = GOLD_SOFT;
       ctx.lineWidth = 1.2;
@@ -417,13 +417,13 @@
       ctx.font = '600 26px ' + SANS;
       drawTracked(ctx, "YOUR COSMIC CARD", cx, 262, 11);
 
-      // ---- 3. Divider atas ---------------------------------------------
+      // ---- 3. Top divider -------------------------------------------------
       drawDivider(ctx, 306, 250, 12);
 
-      // ---- 4. Jendela gambar (fokus utama kartu) -----------------------
+      // ---- 4. Image window (the card's main focal point) ------------------
       var IMG_X = 134, IMG_Y = 352, IMG_W = 812, IMG_H = 800;
 
-      // Bayangan lembut supaya gambar "duduk" di atas kertas.
+      // Soft shadow so the image "sits" on top of the paper.
       ctx.save();
       ctx.shadowColor = "rgba(60, 45, 20, 0.35)";
       ctx.shadowBlur = 26;
@@ -432,7 +432,7 @@
       ctx.fillRect(IMG_X, IMG_Y, IMG_W, IMG_H);
       ctx.restore();
 
-      // Gambar asli: hanya resize + crop tengah. Tanpa filter apa pun.
+      // Original image: only resize + center crop. No filters at all.
       ctx.save();
       ctx.beginPath();
       ctx.rect(IMG_X, IMG_Y, IMG_W, IMG_H);
@@ -440,7 +440,7 @@
       drawImageCover(ctx, img, IMG_X, IMG_Y, IMG_W, IMG_H);
       ctx.restore();
 
-      // Bingkai gambar: emas luar + tinta dalam + hairline nempel gambar.
+      // Image frame: outer gold + inner ink + a hairline against the image.
       ctx.strokeStyle = GOLD;
       ctx.lineWidth = 3;
       ctx.strokeRect(IMG_X - 14, IMG_Y - 14, IMG_W + 28, IMG_H + 28);
@@ -451,7 +451,7 @@
       ctx.lineWidth = 2;
       ctx.strokeRect(IMG_X - 0.5, IMG_Y - 0.5, IMG_W + 1, IMG_H + 1);
 
-      // Aksen sudut bingkai (siku emas).
+      // Frame corner accents (gold elbows).
       var fx0 = IMG_X - 14, fy0 = IMG_Y - 14;
       var fx1 = IMG_X + IMG_W + 14, fy1 = IMG_Y + IMG_H + 14;
       var L = 34;
@@ -468,11 +468,11 @@
         ctx.lineTo(ct[0], ct[1] + ct[3] * L);
         ctx.stroke();
       }
-      // Wajik kecil di tengah atas & bawah bingkai gambar.
+      // Small diamonds centered above & below the image frame.
       diamond(ctx, cx, fy0, 7, GOLD, true);
       diamond(ctx, cx, fy1, 7, GOLD, true);
 
-      // ---- 5. Nama klasifikasi -----------------------------------------
+      // ---- 5. Classification name ------------------------------------------
       star4(ctx, cx, 1218, 11, GOLD);
 
       var title = displayName.toUpperCase();
@@ -487,7 +487,7 @@
       ctx.fillStyle = INK;
       drawTracked(ctx, title, cx, 1316, tracking);
 
-      // Garis bawah judul.
+      // Underline below the title.
       ctx.strokeStyle = GOLD_SOFT;
       ctx.lineWidth = 1.2;
       ctx.beginPath();
@@ -497,7 +497,7 @@
       diamond(ctx, cx - 180, 1348, 4, GOLD, true);
       diamond(ctx, cx + 180, 1348, 4, GOLD, true);
 
-      // ---- 6. Baris statistik ------------------------------------------
+      // ---- 6. Stats row ------------------------------------------------------
       var cols = [
         { x: 250, label: "CONFIDENCE", value: confText },
         { x: 540, label: "SOURCE", value: opts.sourceType || "Image" },
@@ -511,7 +511,7 @@
         ctx.font = '500 42px ' + SERIF;
         ctx.fillText(cols[ci].value, cols[ci].x, 1464);
       }
-      // Pemisah kolom vertikal.
+      // Vertical column separators.
       ctx.strokeStyle = GOLD_SOFT;
       ctx.lineWidth = 1;
       ctx.beginPath();
@@ -521,7 +521,7 @@
       ctx.lineTo(685, 1470);
       ctx.stroke();
 
-      // ---- 7. Penjelasan astronomi -------------------------------------
+      // ---- 7. Astronomy explanation -----------------------------------------
       var expSize = 29;
       var expLineH = 44;
       ctx.font = "400 " + expSize + "px " + SANS;
@@ -541,7 +541,7 @@
         ctx.fillText(lines[li], cx, startY + li * expLineH);
       }
 
-      // ---- 8. Disclaimer -----------------------------------------------
+      // ---- 8. Disclaimer -------------------------------------------------------
       dot(ctx, cx, 1774, 2.4, GOLD_SOFT);
       dot(ctx, cx - 22, 1774, 1.6, GOLD_SOFT);
       dot(ctx, cx + 22, 1774, 1.6, GOLD_SOFT);
@@ -558,7 +558,7 @@
   }
 
   // ========================================================================
-  // Modal preview + download
+  // Preview modal + download
   // ========================================================================
 
   var STYLE_ID = "cosmic-card-style";
@@ -632,7 +632,7 @@
 
       var close = document.createElement("button");
       close.className = "cc-btn cc-close";
-      close.textContent = "Tutup";
+      close.textContent = "Close";
       close.addEventListener("click", closeModal);
 
       actions.appendChild(dl);

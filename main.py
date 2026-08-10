@@ -1,23 +1,23 @@
 """
-Fase 2 - Backend FastAPI buat serve model classifier lewat endpoint /predict.
+Phase 2 - FastAPI backend serving the classifier model through the /predict endpoint.
 
-Cara pakai:
+Usage:
     uvicorn main:app --reload
 
-Lalu buka http://127.0.0.1:8000/docs buat coba upload gambar langsung dari browser
-(Swagger UI otomatis dibikinin sama FastAPI).
+Then open http://127.0.0.1:8000/docs to try uploading an image straight from the
+browser (Swagger UI is generated automatically by FastAPI).
 
-Syarat file yang harus ada sejajar sama main.py:
-    best_model.keras            (model 6 kelas: gambar)
+Files that must sit alongside main.py:
+    best_model.keras             (6-class model: images)
     class_names.txt
-    fits_star_galaxy_model.keras (model 2 kelas: bintang vs galaksi dari FITS)
+    fits_star_galaxy_model.keras (2-class model: star vs galaxy from FITS)
     fits_class_names.txt
 
-Endpoint:
+Endpoints:
     GET  /            -> health check
-    POST /predict     -> klasifikasi gambar (JPG/PNG/WEBP, 6 kelas)
-    POST /predict_fits-> klasifikasi FITS (star/galaxy)
-    POST /fits_preview-> render preview PNG dari FITS
+    POST /predict     -> image classification (JPG/PNG/WEBP, 6 classes)
+    POST /predict_fits-> FITS classification (star/galaxy)
+    POST /fits_preview-> render a PNG preview from a FITS file
 """
 import io
 
@@ -44,59 +44,60 @@ ALLOWED_FITS_SUFFIXES = (".fits", ".fit", ".fits.gz")
 
 EXPLANATIONS = {
     "star": (
-        "Bintang adalah bola gas panas (terutama hidrogen dan helium) yang "
-        "memancarkan cahaya dari reaksi fusi nuklir di intinya. Di foto teleskop, "
-        "bintang tampak sebagai sumber titik yang tajam, karena cahayanya "
-        "terkonsentrasi hanya pada beberapa piksel."
+        "A star is a hot ball of gas (mostly hydrogen and helium) that emits "
+        "light through nuclear fusion in its core. In telescope images, a star "
+        "appears as a sharp point source, since its light is concentrated in "
+        "just a few pixels."
     ),
     "galaxy": (
-        "Galaksi adalah sistem masif berisi milyaran bintang, gas, debu, dan "
-        "materi gelap yang terikat gravitasi. Pada foto teleskop, galaksi tampak "
-        "lebih lebar dan menyebar (extended) dibanding bintang, dengan inti "
-        "terang dan cahaya yang memudar ke tepi."
+        "A galaxy is a massive system containing billions of stars, gas, dust, "
+        "and dark matter bound together by gravity. In telescope images, a "
+        "galaxy appears wider and more extended than a star, with a bright "
+        "core and light that fades toward the edges."
     ),
     "stars": (
-        "Bintang adalah bola gas panas yang memancarkan cahaya dari reaksi fusi "
-        "di intinya. Kelas ini mencakup gambar bintang individu atau gugusan "
-        "bintang yang tampak sebagai titik-titik terang."
+        "A star is a hot ball of gas that emits light through nuclear fusion "
+        "in its core. This class covers images of individual stars or star "
+        "clusters that appear as bright points of light."
     ),
     "galaxies": (
-        "Galaksi adalah kumpulan raksasa bintang, gas, debu, dan materi gelap "
-        "yang terikat gravitasi. Contoh: Bima Sakti, Andromeda. Bentuknya "
-        "beragam — spiral, elips, atau tak beraturan."
+        "A galaxy is a giant collection of stars, gas, dust, and dark matter "
+        "bound together by gravity. Examples: the Milky Way, Andromeda. "
+        "Shapes vary widely — spiral, elliptical, or irregular."
     ),
     "nebula": (
-        "Nebula adalah awan raksasa gas dan debu antar bintang. Ada yang menjadi "
-        "tempat lahir bintang baru (nebula emisi), sisa ledakan bintang "
-        "(nebula supernova), atau sekadar awan debu yang menghalangi cahaya "
-        "(nebula gelap)."
+        "A nebula is a vast interstellar cloud of gas and dust. Some are "
+        "stellar nurseries where new stars are born (emission nebulae), "
+        "others are the remnants of stellar explosions (supernova nebulae), "
+        "or simply dust clouds blocking light (dark nebulae)."
     ),
     "planets": (
-        "Planet adalah benda langit yang mengorbit bintang, berbentuk hampir "
-        "bulat karena gravitasinya sendiri, dan sudah membersihkan orbitnya. "
-        "Contoh dalam tata surya: Mars, Jupiter, Saturnus."
+        "A planet is a celestial body that orbits a star, is nearly spherical "
+        "due to its own gravity, and has cleared its orbital neighborhood. "
+        "Examples in our solar system: Mars, Jupiter, Saturn."
     ),
     "constellation": (
-        "Konstelasi adalah kumpulan bintang di langit yang dilihat membentuk "
-        "pola tertentu dari bumi, misalnya Orion, Ursa Major, atau Cassiopeia. "
-        "Bintang-bintangnya tidak benar-benar berdekatan di ruang angkasa."
+        "A constellation is a group of stars in the sky that, seen from Earth, "
+        "appears to form a recognizable pattern — for example Orion, Ursa "
+        "Major, or Cassiopeia. The stars aren't actually close together in space."
     ),
     "cosmos_space": (
-        "Gambar dari kategori ruang angkasa luas: pemandangan langit, deep field, "
-        "atau foto astronomi yang menampilkan banyak objek. Biasanya diambil "
-        "oleh teleskop luar angkasa atau astrofotografer."
+        "Images from the broad deep-space category: sweeping sky views, deep "
+        "fields, or astronomical photos featuring many objects at once. "
+        "Usually captured by space telescopes or astrophotographers."
     ),
 }
 
 FITS_SCOPE_NOTE = (
-    "Model FITS ini dilatih membedakan 2 kelas saja: bintang vs galaksi. "
-    "Hasil di luar itu (nebula, planet, dll) belum didukung model ini."
+    "This FITS model is trained to distinguish only 2 classes: star vs "
+    "galaxy. Results outside that (nebula, planet, etc.) are not supported "
+    "by this model."
 )
 
 app = FastAPI(title="Astro Classifier API")
 
-# CORS dibuka biar frontend (React/Next.js) di domain/port lain bisa akses API ini.
-# Kalau udah deploy, ganti allow_origins=["*"] jadi domain frontend.
+# CORS is left open so a frontend (React/Next.js) on another domain/port can call this API.
+# Once deployed, replace allow_origins=["*"] with the frontend's actual domain.
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -104,7 +105,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Asset frontend statis (mis. generator "Your Cosmic Card").
+# Static frontend assets (e.g. the "Your Cosmic Card" generator).
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 print("Loading model...")
@@ -113,7 +114,7 @@ model = keras.models.load_model(MODEL_PATH)
 with open(CLASS_NAMES_PATH) as f:
     CLASS_NAMES = [line.strip() for line in f if line.strip()]
 
-print("Model siap. Kelas:", CLASS_NAMES)
+print("Model ready. Classes:", CLASS_NAMES)
 
 print("Loading FITS model...")
 fits_model = keras.models.load_model(FITS_MODEL_PATH)
@@ -121,7 +122,7 @@ fits_model = keras.models.load_model(FITS_MODEL_PATH)
 with open(FITS_CLASS_NAMES_PATH) as f:
     _fits_names = [line.strip() for line in f if line.strip()]
 
-print("Model FITS siap. Kelas:", _fits_names)
+print("FITS model ready. Classes:", _fits_names)
 
 
 def preprocess_image(image_bytes: bytes) -> np.ndarray:
@@ -129,7 +130,7 @@ def preprocess_image(image_bytes: bytes) -> np.ndarray:
     img = img.resize(IMG_SIZE)
     arr = np.array(img, dtype=np.float32)
     arr = keras.applications.efficientnet.preprocess_input(arr)
-    return np.expand_dims(arr, axis=0)  # jadi batch of 1
+    return np.expand_dims(arr, axis=0)  # turn into a batch of 1
 
 
 def is_fits_file(filename: str) -> bool:
@@ -155,21 +156,21 @@ async def predict(file: UploadFile = File(...)):
     if file.content_type not in ALLOWED_CONTENT_TYPES:
         raise HTTPException(
             status_code=400,
-            detail=f"Format '{file.content_type}' belum didukung. Pakai JPG, PNG, atau WEBP.",
+            detail=f"Format '{file.content_type}' is not supported. Use JPG, PNG, or WEBP.",
         )
 
     image_bytes = await file.read()
     if len(image_bytes) > MAX_UPLOAD_SIZE:
         raise HTTPException(
             status_code=413,
-            detail="File terlalu besar. Maksimal 25 MB.",
+            detail="File is too large. Maximum size is 25 MB.",
         )
     try:
         x = preprocess_image(image_bytes)
     except Exception:
         raise HTTPException(
             status_code=400,
-            detail="Gagal membaca gambar. Pastikan filenya gambar yang valid.",
+            detail="Failed to read the image. Make sure the file is a valid image.",
         )
 
     preds = model.predict(x, verbose=0)[0]  # shape: (6,)
@@ -191,40 +192,40 @@ async def predict_fits(file: UploadFile = File(...)):
     if not is_fits_file(file.filename):
         raise HTTPException(
             status_code=400,
-            detail="Format belum didukung. Upload file FITS (.fits / .fit / .fits.gz).",
+            detail="Format not supported. Upload a FITS file (.fits / .fit / .fits.gz).",
         )
 
     fits_bytes = await file.read()
     if len(fits_bytes) > MAX_UPLOAD_SIZE:
         raise HTTPException(
             status_code=413,
-            detail="File terlalu besar. Maksimal 25 MB.",
+            detail="File is too large. Maximum size is 25 MB.",
         )
     try:
         x, quality = fits_utils.preprocess_fits(fits_bytes)
     except Exception as e:
         raise HTTPException(
             status_code=400,
-            detail=f"Gagal membaca file FITS: {e}",
+            detail=f"Failed to read the FITS file: {e}",
         )
 
     p_galaxy = float(fits_model.predict(x, verbose=0)[0][0])
     p_star = 1.0 - p_galaxy
     label = FITS_CLASS_NAMES[1] if p_galaxy >= 0.5 else FITS_CLASS_NAMES[0]
 
-    # Peringatan reliabilitas: data yang banyak NaN / tersaturasi berada di
-    # luar sebaran data latih, jadi prediksinya kemungkinan besar tidak akurat.
+    # Reliability warnings: data with a lot of NaN / saturation falls outside
+    # the training distribution, so the prediction is likely inaccurate.
     warnings = []
     if quality["nan_fraction"] > 0.2:
         warnings.append(
-            f"{quality['nan_fraction'] * 100:.1f}% piksel tidak valid (NaN). "
-            "Data seperti ini di luar sebaran data latih — hasil klasifikasi "
-            "kemungkinan besar tidak akurat."
+            f"{quality['nan_fraction'] * 100:.1f}% of pixels are invalid (NaN). "
+            "Data like this falls outside the training distribution — the "
+            "classification result is likely inaccurate."
         )
     if quality["saturated"]:
         warnings.append(
-            "Terdeteksi saturasi: objek terang bisa tampak melebar (extended) "
-            "sehingga bintang mudah tertukar sebagai galaksi."
+            "Saturation detected: bright objects can appear extended, which "
+            "can cause a star to be misclassified as a galaxy."
         )
 
     return {
@@ -251,18 +252,18 @@ async def fits_preview(
     if not is_fits_file(file.filename):
         raise HTTPException(
             status_code=400,
-            detail="Format belum didukung. Upload file FITS (.fits / .fit / .fits.gz).",
+            detail="Format not supported. Upload a FITS file (.fits / .fit / .fits.gz).",
         )
 
     fits_bytes = await file.read()
     if len(fits_bytes) > MAX_UPLOAD_SIZE:
         raise HTTPException(
             status_code=413,
-            detail="File terlalu besar. Maksimal 25 MB.",
+            detail="File is too large. Maximum size is 25 MB.",
         )
     try:
         png = fits_utils.render_preview(fits_bytes, size=size)
     except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Gagal merender preview: {e}")
+        raise HTTPException(status_code=400, detail=f"Failed to render preview: {e}")
 
     return Response(content=png, media_type="image/png")
