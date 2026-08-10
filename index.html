@@ -324,9 +324,16 @@
 </div>
 
 <script>
-  const IMAGE_API_URL = "/predict";
-  const FITS_API_URL = "/predict_fits";
-  const FITS_PREVIEW_URL = "/fits_preview";
+  // If the frontend is hosted separately from the backend (e.g. this page on
+  // Netlify, the API on Render/Railway/etc.), set API_BASE_URL to the
+  // backend's full URL, e.g. "https://astro-classifier-api.onrender.com".
+  // Leave it as "" when both are served from the same origin (local dev, or
+  // a single combined deployment).
+  const API_BASE_URL = "";
+
+  const IMAGE_API_URL = API_BASE_URL + "/predict";
+  const FITS_API_URL = API_BASE_URL + "/predict_fits";
+  const FITS_PREVIEW_URL = API_BASE_URL + "/fits_preview";
 
   const dropzone = document.getElementById("dropzone");
   const dropzoneText = document.getElementById("dropzone-text");

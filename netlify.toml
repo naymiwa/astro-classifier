@@ -1,0 +1,14 @@
+# Netlify config for the Astro Classifier FRONTEND only.
+#
+# Netlify hosts static sites — it cannot run the Python/TensorFlow backend
+# (main.py). Deploy the backend separately (Render, Railway, Fly.io, etc.)
+# and point index.html's API_BASE_URL at it. See README.md for the full
+# deployment guide.
+#
+# The build step below copies only the frontend files (index.html + static/)
+# into dist/ so backend source, training scripts, and model weights are
+# never published to the public site.
+
+[build]
+  command = "mkdir -p dist && cp index.html dist/ && cp -r static dist/"
+  publish = "dist"
