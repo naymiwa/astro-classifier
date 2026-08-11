@@ -1,0 +1,4 @@
+{
+  "buildCommand": "mkdir -p dist && cp index.html dist/ && cp -r static dist/",
+  "outputDirectory": "dist"
+}

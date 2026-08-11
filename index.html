@@ -1,12 +1,12 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Astro Classifier</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=Cormorant+Garamond:wght@500;600;700&display=swap" rel="stylesheet">
 <style>
   :root {
     --bg: #0a0d1a;
@@ -221,6 +221,58 @@
   }
 
   #status.error { color: #ff8080; }
+
+  #card-btn {
+    display: none;
+    width: 100%;
+    margin-top: 18px;
+    padding: 13px;
+    border: 1px solid var(--gold);
+    border-radius: 10px;
+    background: rgba(255, 184, 107, 0.08);
+    color: var(--gold);
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 600;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: background 0.15s ease, transform 0.1s ease;
+  }
+
+  #card-btn:hover { background: rgba(255, 184, 107, 0.16); }
+  #card-btn:active { transform: scale(0.99); }
+  #card-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .site-footer {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 18px;
+    margin-top: 28px;
+    padding-top: 20px;
+  }
+
+  .site-footer a {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    color: var(--muted);
+    text-decoration: none;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 0.8rem;
+    font-weight: 500;
+    transition: color 0.15s ease;
+  }
+
+  .site-footer a:hover { color: var(--accent); }
+
+  .site-footer a svg { width: 15px; height: 15px; fill: currentColor; flex-shrink: 0; }
+
+  .site-footer .footer-divider {
+    width: 3px;
+    height: 3px;
+    border-radius: 50%;
+    background: var(--line);
+  }
 </style>
 </head>
 <body>
@@ -229,17 +281,17 @@
 
 <div class="wrap">
   <p class="eyebrow">Deep Space Classifier</p>
-  <h1>Apa objek langit ini?</h1>
-  <p class="sub">Upload gambar atau file FITS hasil observasi teleskop — model bakal nebak kategorinya.</p>
+  <h1>Identify Celestial Objects</h1>
+  <p class="sub">Upload an image or a FITS file from telescope observations, and the model will classify its category.</p>
 
   <div class="panel">
     <div class="mode-toggle">
-      <button type="button" class="mode-btn active" data-mode="image">Gambar</button>
+      <button type="button" class="mode-btn active" data-mode="image">Image</button>
       <button type="button" class="mode-btn" data-mode="fits">FITS</button>
     </div>
 
     <div id="dropzone">
-      <p id="dropzone-text"><strong>Klik untuk pilih gambar</strong><br>atau drag & drop di sini (JPG / PNG / WEBP)</p>
+      <p id="dropzone-text"><strong>Click to choose an image</strong><br>or drag & drop here (JPG / PNG / WEBP)</p>
       <input type="file" id="file-input" accept="image/jpeg,image/png,image/webp">
     </div>
 
@@ -249,18 +301,39 @@
       <img id="preview" alt="Preview">
     </div>
 
-    <button id="analyze-btn" disabled>Analisis</button>
+    <button id="analyze-btn" disabled>Analyze</button>
 
     <div id="status"></div>
 
     <div id="results"></div>
+
+    <button id="card-btn">✶ Create Your Cosmic Card</button>
   </div>
+
+  <footer class="site-footer">
+    <a href="https://www.linkedin.com/in/nayla-aqila-argia-241637322/" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.049c.476-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 1 1 0-4.124 2.062 2.062 0 0 1 0 4.124zM7.114 20.452H3.558V9h3.556v11.452z"/></svg>
+      <span>LinkedIn</span>
+    </a>
+    <span class="footer-divider"></span>
+    <a href="https://www.instagram.com/naylargia" target="_blank" rel="noopener noreferrer" aria-label="Instagram">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.012-3.584.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838a6.163 6.163 0 1 0 0 12.326 6.163 6.163 0 0 0 0-12.326zm0 10.162a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm6.406-11.845a1.44 1.44 0 1 0 0 2.881 1.44 1.44 0 0 0 0-2.881z"/></svg>
+      <span>@naylargia</span>
+    </a>
+  </footer>
 </div>
 
 <script>
-  const IMAGE_API_URL = "/predict";
-  const FITS_API_URL = "/predict_fits";
-  const FITS_PREVIEW_URL = "/fits_preview";
+  // If the frontend is hosted separately from the backend (e.g. this page on
+  // Netlify, the API on Render/Railway/etc.), set API_BASE_URL to the
+  // backend's full URL, e.g. "https://astro-classifier-api.onrender.com".
+  // Leave it as "" when both are served from the same origin (local dev, or
+  // a single combined deployment).
+  const API_BASE_URL = "";
+
+  const IMAGE_API_URL = API_BASE_URL + "/predict";
+  const FITS_API_URL = API_BASE_URL + "/predict_fits";
+  const FITS_PREVIEW_URL = API_BASE_URL + "/fits_preview";
 
   const dropzone = document.getElementById("dropzone");
   const dropzoneText = document.getElementById("dropzone-text");
@@ -272,9 +345,12 @@
   const statusEl = document.getElementById("status");
   const resultsEl = document.getElementById("results");
   const modeBtns = document.querySelectorAll(".mode-btn");
+  const cardBtn = document.getElementById("card-btn");
 
   let selectedFile = null;
   let mode = "image";
+  // Last successful prediction data — used for "Your Cosmic Card".
+  let lastCard = null;
 
   const FITS_ACCEPT = ".fits,.fit,.fits.gz";
 
@@ -283,10 +359,10 @@
     modeBtns.forEach((b) => b.classList.toggle("active", b.dataset.mode === m));
     if (m === "fits") {
       fileInput.setAttribute("accept", FITS_ACCEPT);
-      dropzoneText.innerHTML = "<strong>Klik untuk pilih file FITS</strong><br>atau drag & drop di sini (.fits / .fit / .fits.gz)";
+      dropzoneText.innerHTML = "<strong>Click to choose a FITS file</strong><br>or drag & drop here (.fits / .fit / .fits.gz)";
     } else {
       fileInput.setAttribute("accept", "image/jpeg,image/png,image/webp");
-      dropzoneText.innerHTML = "<strong>Klik untuk pilih gambar</strong><br>atau drag & drop di sini (JPG / PNG / WEBP)";
+      dropzoneText.innerHTML = "<strong>Click to choose an image</strong><br>or drag & drop here (JPG / PNG / WEBP)";
     }
     clearResults();
   }
@@ -315,6 +391,8 @@
     statusEl.className = "";
     resultsEl.style.display = "none";
     resultsEl.innerHTML = "";
+    lastCard = null;
+    cardBtn.style.display = "none";
   }
 
   function handleFile(file) {
@@ -325,7 +403,7 @@
 
     if (mode === "fits") {
       analyzeBtn.disabled = true;
-      statusEl.textContent = "Merender preview...";
+      statusEl.textContent = "Rendering preview...";
       previewWrap.style.display = "block";
       preview.style.opacity = "0.35";
 
@@ -333,7 +411,7 @@
       formData.append("file", file);
       fetch(FITS_PREVIEW_URL, { method: "POST", body: formData })
         .then((res) => {
-          if (!res.ok) return Promise.reject(new Error("preview gagal"));
+          if (!res.ok) return Promise.reject(new Error("preview failed"));
           return res.blob();
         })
         .then((blob) => {
@@ -345,7 +423,7 @@
         .catch(() => {
           preview.style.opacity = "1";
           analyzeBtn.disabled = false;
-          statusEl.textContent = "Preview tidak tersedia, tapi file tetap bisa dianalisis.";
+          statusEl.textContent = "Preview unavailable, but the file can still be analyzed.";
         });
     } else {
       preview.src = URL.createObjectURL(file);
@@ -358,7 +436,7 @@
     if (!selectedFile) return;
 
     analyzeBtn.disabled = true;
-    statusEl.textContent = "Menganalisis...";
+    statusEl.textContent = "Analyzing...";
     statusEl.className = "";
     resultsEl.style.display = "none";
 
@@ -378,8 +456,9 @@
       if (mode === "fits") renderFitsResult(data);
       else renderResults(data.top3);
       statusEl.textContent = "";
+      rememberCard(data);
     } catch (e) {
-      statusEl.textContent = `Gagal: ${e.message}. Pastiin backend-nya lagi jalan di ${url}.`;
+      statusEl.textContent = `Failed: ${e.message}. Make sure the backend is running at ${url}.`;
       statusEl.className = "error";
     } finally {
       analyzeBtn.disabled = false;
@@ -415,9 +494,20 @@
   }
 
   function renderFitsResult(data) {
+    // Reliability warnings go first, so they're immediately visible.
+    (data.warnings || []).forEach((w) => {
+      const warn = document.createElement("p");
+      warn.style.cssText =
+        "margin:0 0 14px;padding:10px 12px;border-radius:8px;font-size:0.8rem;" +
+        "line-height:1.5;color:#ffb3b3;background:rgba(255,128,128,0.08);" +
+        "border:1px solid rgba(255,128,128,0.25);";
+      warn.textContent = `⚠ ${w}`;
+      resultsEl.appendChild(warn);
+    });
+
     const item = data.prediction;
     const isGalaxy = item.label === "galaxy";
-    const display = isGalaxy ? "Galaksi" : "Bintang";
+    const display = isGalaxy ? "Galaxy" : "Star";
     const badge = isGalaxy ? "galaxy" : "star";
     const pct = Math.round(item.confidence * 100);
 
@@ -441,7 +531,7 @@
       notes.push(`star ${Math.round(probs.star * 100)}% · galaxy ${Math.round(probs.galaxy * 100)}%`);
     }
     const q = data.quality || {};
-    if (q.saturated) notes.push("terdeteksi saturasi");
+    if (q.saturated) notes.push("saturation detected");
     if ((q.nan_fraction || 0) > 0.001) notes.push(`NaN ${(q.nan_fraction * 100).toFixed(1)}%`);
 
     const note = document.createElement("p");
@@ -466,7 +556,56 @@
     resultsEl.style.display = "block";
   }
 
-  // starfield tipis di background, murni dekoratif
+  // ---- Your Cosmic Card -------------------------------------------------
+  // Remember the last successful prediction + image source, then show the button.
+  function rememberCard(data) {
+    const top = data.prediction || (data.top3 && data.top3[0]);
+    if (!top) return;
+    lastCard = {
+      mode,
+      label: top.label,
+      confidence: top.confidence,
+      file: selectedFile,
+      imageUrl: preview.src, // original image (image mode) / already-rendered FITS preview
+      numClasses: mode === "fits" ? 2 : 6,
+    };
+    cardBtn.style.display = "block";
+  }
+
+  cardBtn.addEventListener("click", async () => {
+    if (!lastCard || !window.CosmicCard) return;
+    const originalText = cardBtn.textContent;
+    cardBtn.disabled = true;
+    cardBtn.textContent = "Creating card...";
+    try {
+      let imageUrl = lastCard.imageUrl;
+      // For FITS: request the SAME preview but at a higher resolution so
+      // it stays sharp on the 1080px card. Fall back to the existing preview on failure.
+      if (lastCard.mode === "fits" && lastCard.file) {
+        try {
+          const fd = new FormData();
+          fd.append("file", lastCard.file);
+          const res = await fetch(FITS_PREVIEW_URL + "?size=900", { method: "POST", body: fd });
+          if (res.ok) imageUrl = URL.createObjectURL(await res.blob());
+        } catch (_) { /* fall back to the small preview */ }
+      }
+      await CosmicCard.open({
+        imageUrl,
+        label: lastCard.label,
+        confidence: lastCard.confidence,
+        sourceType: lastCard.mode === "fits" ? "FITS" : "Image",
+        numClasses: lastCard.numClasses,
+      });
+    } catch (e) {
+      statusEl.textContent = `Failed to create card: ${e.message}`;
+      statusEl.className = "error";
+    } finally {
+      cardBtn.disabled = false;
+      cardBtn.textContent = originalText;
+    }
+  });
+
+  // subtle background starfield, purely decorative
   const canvas = document.getElementById("stars");
   const ctx = canvas.getContext("2d");
   let stars = [];
@@ -500,6 +639,7 @@
   resize();
   requestAnimationFrame(draw);
 </script>
+<script src="/static/cosmic-card.js"></script>
 
 </body>
 </html>

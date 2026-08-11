@@ -1,0 +1,13 @@
+.git
+.venv
+venv
+__pycache__
+*.pyc
+node_modules
+uploads
+classification_dataset
+real_dataset
+archive.zip
+space images
+demo
+*.ipynb_checkpoints

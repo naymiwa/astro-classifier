@@ -1,3 +1,13 @@
+---
+title: Astro Classifier
+emoji: 🔭
+colorFrom: indigo
+colorTo: purple
+sdk: docker
+app_port: 8000
+pinned: false
+---
+
 # Astro Classifier
 
 Website klasifikasi gambar benda ruang angkasa. User bisa upload:
@@ -5,6 +15,16 @@ Website klasifikasi gambar benda ruang angkasa. User bisa upload:
 - **File FITS** (`.fits` / `.fit` / `.fits.gz`) → ditebak bintang vs galaksi, plus preview PNG.
 
 Dibuat untuk observer teleskop: hasil observasi format FITS bisa langsung diupload dan web kasih jawaban benda apa + penjelasan singkat.
+
+## Your Cosmic Card
+
+Setelah prediksi sukses, muncul tombol **"Create Your Cosmic Card"** — men-generate kartu 1080×1920 (9:16, siap Instagram Story) bergaya kartu tarot vintage tapi berisi informasi astronomi ilmiah: nomor Romawi per kelas, gambar asli user dalam bingkai dekoratif, nama klasifikasi, confidence, sumber (Image/FITS), jumlah kelas model, penjelasan singkat terkurasi, dan disclaimer.
+
+- Sepenuhnya di-render **client-side** pakai Canvas 2D (`static/cosmic-card.js`) — tanpa dependensi baru, tanpa beban server.
+- Gambar asli **tidak diubah** (tanpa filter/stylize) — hanya resize + crop tengah ke dalam bingkai.
+- Untuk FITS, kartu memakai preview yang sama dengan yang sudah dirender aplikasi (`/fits_preview`, diminta ulang di resolusi lebih tinggi via query `?size=`).
+- Nomor Romawi tetap per kelas: Galaxy I · Star II · Nebula III · Planet IV · Constellation V · Deep Space VI.
+- Download langsung sebagai PNG dari modal preview.
 
 ## Cara jalanin
 
@@ -34,6 +54,8 @@ Buka `http://127.0.0.1:8000` di browser. Endpoint Swagger UI ada di `http://127.
 astro-project/
 ├─ main.py                      # Backend FastAPI: /predict, /predict_fits, /fits_preview, /health
 ├─ index.html                   # Frontend (1 file): upload gambar / FITS, preview, hasil + penjelasan
+├─ static/
+│  └─ cosmic-card.js            # Generator "Your Cosmic Card" (Canvas 2D, client-side)
 ├─ fits_utils.py                # Preprocessing FITS (dipakai training & inference)
 ├─ best_model.keras             # Model gambar 6 kelas (EfficientNetB0)
 ├─ class_names.txt              # Urutan kelas model gambar
@@ -78,9 +100,28 @@ Output: `fits_star_galaxy_model.keras` + `fits_class_names.txt`.
 | GET | `/health` | Status + daftar kelas |
 | POST | `/predict` | Klasifikasi gambar (JPG/PNG/WEBP) → top-3 + penjelasan |
 | POST | `/predict_fits` | Klasifikasi FITS → star/galaxy + probabilitas + kualitas |
-| POST | `/fits_preview` | Render FITS → PNG (preview sebelum analisis) |
+| POST | `/fits_preview` | Render FITS → PNG (preview sebelum analisis); query opsional `?size=64..1200` (default 300) |
 
 Semua endpoint upload pakai `multipart/form-data`, field name `file`.
+
+## Deploy (hosting publik)
+
+Backend ini butuh proses Python yang jalan terus (TensorFlow + FastAPI), jadi **tidak bisa** di-host di layanan statis seperti Netlify/Vercel/GitHub Pages sendirian. Rekomendasi paling gampang dan gratis tanpa kartu kredit: **Hugging Face Spaces**.
+
+### Deploy backend ke Hugging Face Spaces (gratis, tanpa kartu)
+
+1. Buat akun di [huggingface.co](https://huggingface.co/join) (cukup email).
+2. Klik **New Space** → isi nama → pilih SDK **Docker** → hardware **CPU basic** (gratis) → **Create Space**.
+3. Repo `Dockerfile` di project ini sudah siap dipakai — tinggal push isi repo ini ke Space tersebut:
+   ```powershell
+   git remote add space https://huggingface.co/spaces/<username>/<nama-space>
+   git push space master:main
+   ```
+   (Ganti `<username>` dan `<nama-space>` sesuai Space yang kamu buat. Kalau diminta login, pakai access token dari huggingface.co/settings/tokens.)
+4. Tunggu build selesai (beberapa menit, TensorFlow lumayan besar). Space kamu akan live di:
+   `https://huggingface.co/spaces/<username>/<nama-space>` (embed) atau `https://<username>-<nama-space>.hf.space` (URL langsung, dipakai buat `API_BASE_URL` di frontend).
+
+Untuk frontend (`index.html` + `static/`) di Netlify, isi `API_BASE_URL` di `index.html` dengan URL `https://<username>-<nama-space>.hf.space` sebelum deploy — lihat `netlify.toml` di root repo.
 
 ## Catatan & limitasi
 

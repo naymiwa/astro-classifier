@@ -1,12 +1,12 @@
 """
-Preprocessing FITS bersama (dipakai training & inference biar konsisten).
+Shared FITS preprocessing (used by both training & inference for consistency).
 
 Pipeline:
-    load_fits_bytes(bytes)  -> array 2D float32 + info kualitas
-    normalize_fits(array)   -> kurangi sky (sigma-clipped median), normalisasi
-                               percentile 1-99.5% ke [0,1]
-    to_model_input(array)   -> resize 64x64, grayscale jadi 3 channel
-    preprocess_fits(bytes)  -> gabungan ketiganya + batch dimension
+    load_fits_bytes(bytes)  -> 2D float32 array + quality info
+    normalize_fits(array)   -> subtract sky (sigma-clipped median), normalize
+                               the 1-99.5% percentile range to [0,1]
+    to_model_input(array)   -> resize to 64x64, replicate grayscale to 3 channels
+    preprocess_fits(bytes)  -> combines all three + adds a batch dimension
 """
 import io
 
@@ -18,14 +18,15 @@ from scipy import ndimage
 
 IMG_SIZE = 64
 SATURATED_FRACTION = 0.0005
-MAX_SIDE = 2048  # frame lebih besar di-downsample biar inferensi tetap cepat
+MAX_SIDE = 2048  # larger frames are downsampled to keep inference fast
 
 
 def load_fits_bytes(data: bytes):
-    """Baca FITS dari memori, kembalikan (array 2D float32, dict quality).
+    """Read a FITS file from memory, return (2D float32 array, quality dict).
 
-    Menangani multi-HDU, cube 3D (ambil slice pertama), BSCALE/BZERO otomatis
-    oleh astropy, NaN/Inf, dan file terkompresi (.fits.gz) lewat magic bytes.
+    Handles multi-HDU files, 3D cubes (takes the first slice), automatic
+    BSCALE/BZERO from astropy, NaN/Inf values, and compressed files
+    (.fits.gz) via magic bytes.
     """
     nan_fraction = 0.0
     with fits.open(io.BytesIO(data), memmap=False) as hdul:
@@ -35,7 +36,7 @@ def load_fits_bytes(data: bytes):
                 image = hdu
                 break
         if image is None:
-            raise ValueError("Tidak ditemukan HDU berisi gambar (image) di file ini.")
+            raise ValueError("No HDU containing image data was found in this file.")
 
         raw = np.asarray(image.data)
         if not np.issubdtype(raw.dtype, np.floating):
@@ -48,9 +49,9 @@ def load_fits_bytes(data: bytes):
             raw = raw[0]
         if raw.ndim != 2:
             raise ValueError(
-                "File FITS ini bukan gambar 2D (bukan stamp satu objek). "
-                "Kemungkinan data cube 3D atau spektral. Untuk demo, upload "
-                "file FITS berisi satu objek langit (stamp)."
+                "This FITS file is not a 2D image (not a single-object stamp). "
+                "It may be a 3D data cube or spectral data. For this demo, "
+                "upload a FITS file containing a single celestial object (a stamp)."
             )
 
     arr = np.asarray(raw, dtype=np.float32)
@@ -66,7 +67,7 @@ def load_fits_bytes(data: bytes):
 
 
 def normalize_fits(data: np.ndarray) -> np.ndarray:
-    """Kurangi sky background lalu normalisasi percentile ke [0,1]."""
+    """Subtract sky background, then normalize the percentile range to [0,1]."""
     arr = data.astype(np.float32)
     if arr.size == 0:
         return arr
@@ -81,7 +82,7 @@ def normalize_fits(data: np.ndarray) -> np.ndarray:
 
 
 def to_model_input(data: np.ndarray, size: int = IMG_SIZE) -> np.ndarray:
-    """Normalisasi -> resize -> replicate grayscale jadi 3 channel [0,1]."""
+    """Normalize -> resize -> replicate grayscale into 3 channels [0,1]."""
     norm = normalize_fits(data)
     img = Image.fromarray((norm * 255.0).astype(np.uint8), mode="L")
     img = img.resize((size, size), Image.BILINEAR)
@@ -90,14 +91,14 @@ def to_model_input(data: np.ndarray, size: int = IMG_SIZE) -> np.ndarray:
 
 
 def preprocess_fits(data: bytes, size: int = IMG_SIZE):
-    """Gabungan load + normalize + resize, plus batch dimension."""
+    """Combines load + normalize + resize, plus a batch dimension."""
     arr, quality = load_fits_bytes(data)
     inp = to_model_input(arr, size)
     return np.expand_dims(inp, axis=0), quality
 
 
 def render_preview(data: bytes, size: int = 300) -> bytes:
-    """Render stamp ternormalisasi jadi PNG (RGB, colormap inferno-ish)."""
+    """Render the normalized stamp as a PNG (RGB, inferno-ish colormap)."""
     arr, _ = load_fits_bytes(data)
     norm = normalize_fits(arr)
     lut = _inferno_lut()
@@ -110,7 +111,7 @@ def render_preview(data: bytes, size: int = 300) -> bytes:
 
 
 def _inferno_lut() -> np.ndarray:
-    """LUT colormap mirip inferno (256 x 3), tanpa dependensi matplotlib."""
+    """Inferno-like colormap LUT (256 x 3), no matplotlib dependency."""
     stops = np.array(
         [
             [0.000, 0.000, 0.040],
