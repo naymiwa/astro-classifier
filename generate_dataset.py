@@ -100,12 +100,74 @@ def generate_stamp(size, rng):
     return np.asarray(img, dtype=np.float32), label, class_name
 
 
+def generate_workshop_stamp(size, rng):
+    """Buat satu stamp gaya notebook workshop (Astronomical_Simulate.ipynb):
+    Gaussian2D murni untuk bintang, Sersic2D murni untuk galaksi, TANPA PSF
+    convolution. Sebagian kecil sampel dibuat 100% bersih (persis kode
+    notebook: tanpa sky background, tanpa noise sama sekali) supaya model
+    kenal gaya ini; sisanya dikasih sedikit noise/background ringan supaya
+    tidak terlalu sempit sebarannya. Parameter di-random di sekitar nilai
+    contoh di notebook (amplitude=5, x_stddev=5 utk bintang;
+    amplitude=0.5, r_eff=50, n=5, ellip=0.5 utk galaksi).
+    """
+    y, x = np.mgrid[0:size, 0:size]
+    margin = size * 0.27  # notebook: objek sekitar 1/3 - 2/3 kanvas
+    cx = rng.uniform(margin, size - margin)
+    cy = rng.uniform(margin, size - margin)
+
+    is_star = rng.random() < 0.5
+
+    if is_star:
+        amp = rng.uniform(1.0, 15.0)
+        stddev = rng.uniform(2.0, 12.0)
+        star = Gaussian2D(amplitude=amp, x_mean=cx, y_mean=cy,
+                           x_stddev=stddev, y_stddev=stddev)
+        obj = star(x, y)
+        label = 0
+        class_name = "star"
+    else:
+        amp = rng.uniform(0.1, 2.0)
+        r_eff = rng.uniform(15.0, 70.0)
+        n = rng.uniform(1.0, 6.0)
+        ellip = rng.uniform(0.0, 0.7)
+        theta = rng.uniform(0, np.pi)
+        galaxy = Sersic2D(amplitude=amp, r_eff=r_eff, n=n, x_0=cx, y_0=cy,
+                           theta=theta, ellip=ellip)
+        obj = galaxy(x, y)
+        label = 1
+        class_name = "galaxy"
+
+    img = obj.astype(np.float64)
+
+    # ~55% sampel dibiarkan 100% bersih (persis notebook: nol noise, nol
+    # background) -- sisanya dikasih sedikit realisme ringan biar tidak
+    # semuanya identik gaya "buku teks".
+    if rng.random() >= 0.55:
+        sky = rng.uniform(0.0, 0.3) * max(amp, 0.1)
+        img = img + sky
+        noise_sigma = rng.uniform(0.0, 0.06) * max(amp, 0.1)
+        if noise_sigma > 0:
+            img = img + rng.normal(0.0, noise_sigma, size=(size, size))
+
+    return np.asarray(img, dtype=np.float32), label, class_name
+
+
 def main():
     parser = argparse.ArgumentParser(description="Generate dataset FITS star/galaxy.")
     parser.add_argument("--count", type=int, default=1000)
     parser.add_argument("--size", type=int, default=300)
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--outdir", default="classification_dataset")
+    parser.add_argument(
+        "--style",
+        choices=["realistic", "workshop", "mixed"],
+        default="realistic",
+        help=(
+            "realistic = PSF+noise ala observasi teleskop (default); "
+            "workshop = gaya Astronomical_Simulate.ipynb (Gaussian2D/Sersic2D "
+            "polos, sering tanpa noise); mixed = campuran acak keduanya."
+        ),
+    )
     args = parser.parse_args()
 
     rng = np.random.default_rng(args.seed)
@@ -113,7 +175,17 @@ def main():
 
     labels_data = []
     for i in range(args.count):
-        img, label, class_name = generate_stamp(args.size, rng)
+        if args.style == "workshop":
+            use_workshop = True
+        elif args.style == "mixed":
+            use_workshop = rng.random() < 0.5
+        else:
+            use_workshop = False
+
+        if use_workshop:
+            img, label, class_name = generate_workshop_stamp(args.size, rng)
+        else:
+            img, label, class_name = generate_stamp(args.size, rng)
         filename = f"img_{i:04d}.fits"
         fits.writeto(os.path.join(args.outdir, filename), img, overwrite=True)
         labels_data.append({"filename": filename, "label": label, "class_name": class_name})
