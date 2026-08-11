@@ -42,6 +42,14 @@ FITS_CLASS_NAMES_PATH = "fits_class_names.txt"
 FITS_CLASS_NAMES = ["star", "galaxy"]
 ALLOWED_FITS_SUFFIXES = (".fits", ".fit", ".fits.gz")
 
+# Decision threshold for p(galaxy). Calibrated on a held-out validation split
+# of real Kaggle telescope cutouts (github.com/divyansh22/dummy-astronomy-data)
+# mixed with synthetic stamps: at the "textbook" 0.5 cutoff, real-photo
+# accuracy was skewed (star 67.6% vs galaxy 90.4%); 0.55 balances both
+# classes on real photos (~79% each) with no measurable cost on synthetic
+# data. Re-check this value if the model is retrained.
+FITS_GALAXY_THRESHOLD = 0.55
+
 EXPLANATIONS = {
     "star": (
         "A star is a hot ball of gas (mostly hydrogen and helium) that emits "
@@ -211,7 +219,9 @@ async def predict_fits(file: UploadFile = File(...)):
 
     p_galaxy = float(fits_model.predict(x, verbose=0)[0][0])
     p_star = 1.0 - p_galaxy
-    label = FITS_CLASS_NAMES[1] if p_galaxy >= 0.5 else FITS_CLASS_NAMES[0]
+    is_galaxy = p_galaxy >= FITS_GALAXY_THRESHOLD
+    label = FITS_CLASS_NAMES[1] if is_galaxy else FITS_CLASS_NAMES[0]
+    label_confidence = p_galaxy if is_galaxy else p_star
 
     # Reliability warnings: data with a lot of NaN / saturation falls outside
     # the training distribution, so the prediction is likely inaccurate.
@@ -232,7 +242,7 @@ async def predict_fits(file: UploadFile = File(...)):
         "warnings": warnings,
         "prediction": {
             "label": label,
-            "confidence": round(max(p_star, p_galaxy), 4),
+            "confidence": round(label_confidence, 4),
             "explanation": EXPLANATIONS.get(label, ""),
         },
         "probabilities": {
