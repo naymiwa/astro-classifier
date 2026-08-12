@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Astro Classifier</title>
+<title>Lumora — Deep Space Classifier</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=Cormorant+Garamond:wght@500;600;700&display=swap" rel="stylesheet">
@@ -46,6 +46,20 @@
     z-index: 1;
     width: 100%;
     max-width: 560px;
+  }
+
+  .brand {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 0 14px;
+  }
+
+  .brand img {
+    width: 100%;
+    max-width: 220px;
+    height: auto;
+    display: block;
   }
 
   h1 {
@@ -280,6 +294,9 @@
 <canvas id="stars"></canvas>
 
 <div class="wrap">
+  <div class="brand">
+    <img src="/static/lumora.png" alt="Lumora logo">
+  </div>
   <p class="eyebrow">Deep Space Classifier</p>
   <h1>Identify Celestial Objects</h1>
   <p class="sub">Upload an image or a FITS file from telescope observations, and the model will classify its category.</p>
